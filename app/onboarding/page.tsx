@@ -34,6 +34,8 @@ import {
 } from "@/components/Select/select";
 import { MultiSelect } from "@/components/MultiSelect/multi-select-input";
 import { Textarea } from "@/components/TextArea/textarea";
+import { Slider } from "@/components/Slider/slider";
+import { useRouter } from "next/navigation";
 
 // Use an empty schema for steps without a form
 const stepOneSchema = z.object({});
@@ -61,6 +63,12 @@ const stepFourSchema = z.object({
 	giftRestrictions: z.string(),
 });
 
+const stepFiveSchema = z.object({
+	giftPersonality: z.number(),
+	experienceStyle: z.number(),
+	giftStyle: z.number(),
+});
+
 // Combined schema for the entire form
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FormSchema = z.object({
@@ -78,6 +86,9 @@ const FormSchema = z.object({
 			"Our elves need a little more info about your interests to find the perfect gift! Please share some of your favorite activities or hobbies.",
 	}),
 	giftRestrictions: z.string(),
+	giftPersonality: z.number(),
+	experienceStyle: z.number(),
+	giftStyle: z.number(),
 });
 
 type Step = {
@@ -107,6 +118,11 @@ const steps: Step[] = [
 		description: "Help your secret Santa avoid any gift mishaps",
 		schema: stepFourSchema,
 	},
+	{
+		title: "Gift Compass",
+		description: "Help us understand your perfect gift style",
+		schema: stepFiveSchema,
+	},
 ];
 
 const hobbyOptions = [
@@ -122,6 +138,8 @@ const hobbyOptions = [
 
 export default function OnboardingPage() {
 	const [currentStep, setCurrentStep] = useState(0);
+	const [isSubmitted, setIsSubmitted] = useState(false);
+	const router = useRouter();
 
 	// Initialize form
 	const form = useForm<z.infer<typeof FormSchema>>({
@@ -131,6 +149,10 @@ export default function OnboardingPage() {
 			giftCircle: "",
 			categories: [],
 			hobbies: "",
+			giftRestrictions: "",
+			giftPersonality: 50,
+			experienceStyle: 50,
+			giftStyle: 50,
 		},
 	});
 
@@ -160,10 +182,36 @@ export default function OnboardingPage() {
 		}
 	}
 
-	function onSubmit() {
+	async function onSubmit() {
 		if (currentStep === steps.length - 1) {
-			// TODO: Replace with API call to update profile in DB
-			console.log("Form data:", form.getValues());
+			try {
+				const formData = form.getValues();
+				const response = await fetch("/api/profile", {
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						display_name: formData.name,
+						age_group: formData.giftCircle,
+						categories: formData.categories,
+						hobbies: formData.hobbies,
+						avoid: formData.giftRestrictions,
+						practical_whimsical: formData.giftPersonality,
+						cozy_adventurous: formData.experienceStyle,
+						minimal_luxurious: formData.giftStyle,
+					}),
+				});
+
+				if (!response.ok) {
+					throw new Error("Failed to update profile");
+				}
+
+				setIsSubmitted(true);
+				router.push("/dashboard");
+			} catch (error) {
+				console.error("Error updating profile: ", error);
+			}
 		} else {
 			next();
 		}
@@ -172,7 +220,10 @@ export default function OnboardingPage() {
 	return (
 		<main className="w-full min-h-screen flex flex-col items-center justify-center">
 			<div className="max-w-lg">
-				<Progress value={(currentStep / steps.length) * 100} className="my-4" />
+				<Progress
+					value={isSubmitted ? 100 : (currentStep / steps.length) * 100}
+					className="my-4"
+				/>
 				<Card>
 					<CardHeader>
 						<CardTitle className="text-center text-2xl font-bold">
@@ -342,6 +393,84 @@ export default function OnboardingPage() {
 										/>
 									</>
 								)}
+								{currentStep === 4 && (
+									<div className="flex flex-col gap-4">
+										<FormField
+											control={form.control}
+											name="giftPersonality"
+											render={({ field }) => (
+												<FormItem>
+													<FormLabel>Gift Personality</FormLabel>
+													<FormControl>
+														<Slider
+															min={0}
+															max={100}
+															value={[field.value]}
+															onValueChange={(values) =>
+																field.onChange(values[0])
+															}
+														/>
+													</FormControl>
+													<FormDescription className="flex justify-between">
+														<span>Practical & Purposeful</span>
+														<span>Fun & Whimsical</span>
+													</FormDescription>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+
+										<FormField
+											control={form.control}
+											name="experienceStyle"
+											render={({ field }) => (
+												<FormItem>
+													<FormLabel>Experience Style</FormLabel>
+													<FormControl>
+														<Slider
+															min={0}
+															max={100}
+															value={[field.value]}
+															onValueChange={(values) =>
+																field.onChange(values[0])
+															}
+														/>
+													</FormControl>
+													<FormDescription className="flex justify-between">
+														<span>Cozy & Comfortable</span>
+														<span>Bold & Adventurous</span>
+													</FormDescription>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+
+										<FormField
+											control={form.control}
+											name="giftStyle"
+											render={({ field }) => (
+												<FormItem>
+													<FormLabel>Gift Style</FormLabel>
+													<FormControl>
+														<Slider
+															min={0}
+															max={100}
+															value={[field.value]}
+															onValueChange={(values) =>
+																field.onChange(values[0])
+															}
+														/>
+													</FormControl>
+													<FormDescription className="flex justify-between">
+														<span>Simple & Essential</span>
+														<span>Fancy & Special</span>
+													</FormDescription>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+									</div>
+								)}
 							</CardContent>
 							<CardFooter>
 								<div
@@ -357,7 +486,9 @@ export default function OnboardingPage() {
 										</Button>
 									)}
 									<Button type="submit">
-										{currentStep < steps.length - 1 ? "Next" : "Submit"}
+										{currentStep < steps.length - 1
+											? "Next"
+											: "Find My Perfect Gift"}
 										<ChevronRight />
 									</Button>
 								</div>
