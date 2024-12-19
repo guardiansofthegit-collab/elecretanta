@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const GroupCard = () => {
   return (
-    <Link href="/">
+    <Link href="">
       <div className="h-28 lg:w-1/2 flex items-center p-4 rounded-xl bg-groupCardGreen">
         <img
           className="h-16 w-16 lg:h-20 lg:w-20 rounded-xl"

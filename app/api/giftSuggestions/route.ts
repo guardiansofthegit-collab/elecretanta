@@ -1,10 +1,10 @@
 import { openai } from "../openaiConfig/config";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  const requestBody = await req.json();
+export async function POST() {
+  // const requestBody = await req.json();
 
-  const { profile } = requestBody;
+  // const { profile } = requestBody;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
           - Avoid
 
           For each suggestion, provide:
-          - Title and approximate price range
+          - Short Title of Gift
+          - Price range of gift
           - Brief description
-          - 3 reasons why it matches the profile
+          - 2 short reasons why it matches the profile
           - Match percentage
 
           Format as JSON with fields: title, price, description, matchReasons[], matchScore.
@@ -33,7 +34,8 @@ export async function POST(req: NextRequest) {
         },
         {
           role: "user",
-          content: `Name: ${profile.name}, Age: ${profile.age}, Interests: ${profile.interests}, Style: ${profile.style}, Budget: ${profile.budget}, Avoid: ${profile.avoid}`,
+          // content: `Name: ${profile.name}, Age: ${profile.age}, Interests: ${profile.interests}, Style: ${profile.style}, Budget: ${profile.budget}, Avoid: ${profile.avoid}`,
+          content: `Name: Jack, Age: 25, Interests: Cooking and Athletics, Style: Practicall, Budget: $50, Avoid: Candy and Peanuts`,
         },
       ],
     });
