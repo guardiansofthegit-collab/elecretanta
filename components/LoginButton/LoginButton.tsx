@@ -4,26 +4,50 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "../Button/button";
 import { useState } from "react";
 import { LoadingSpinner } from "../LoadingSpinner/LoadingSpinner";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 
 export default function LoginButton({ redirectPath = "/onboarding" }) {
 	const [isLoading, setIsLoading] = useState(false);
+	const router = useRouter();
 
 	const signInWithGoogle = async () => {
 		setIsLoading(true);
-		const supabase = createClient();
-		const { error } = await supabase.auth.signInWithOAuth({
-			provider: "google",
-			options: {
-				redirectTo: `${window.location.origin}/auth/callback`,
-				queryParams: {
-					redirect_to: redirectPath,
+		try {
+			const supabase = createClient();
+			const { error } = await supabase.auth.signInWithOAuth({
+				provider: "google",
+				options: {
+					redirectTo: `${window.location.origin}/auth/callback`,
+					queryParams: {
+						redirect_to: redirectPath,
+					},
 				},
-			},
-		});
+			});
 
-		if (error) {
-			redirect("/auth/error");
+			if (error) {
+				redirect("/auth/error");
+			}
+
+			const {
+				data: { user },
+			} = await supabase.auth.getUser();
+			if (!user) return;
+
+			const { data: profile } = await supabase
+				.from("profiles")
+				.select("onboarding_complete")
+				.eq("id", user.id)
+				.single();
+
+			if (profile?.onboarding_complete) {
+				router.push("/dashboard");
+			} else {
+				router.push("/onboarding");
+			}
+		} catch (error) {
+			console.error("Error occurred during Google Sign in: ", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
