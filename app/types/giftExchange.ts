@@ -12,6 +12,18 @@ export interface GiftExchange {
 	status: string;
 }
 
+export interface GiftExchangeWithMemberCount {
+	gift_exchange_id: string;
+	name: string;
+	description: string;
+	group_image: string;
+	budget: string;
+	drawing_date: string;
+	exchange_date: string;
+	owner_id: string;
+	member_count: number;
+}
+
 export interface CreateGiftExchangeRequest {
 	name: string;
 	description?: string;
